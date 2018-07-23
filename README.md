@@ -11,4 +11,4 @@ Query:Temporal_Query,Range_Query and Interval_Query
 Aggerator:Max,Min and Mean
 Analyse:Topk
 
-If you have questions ,you email elroyt@163.com.
+If you have questions ,you can email elroyt@163.com.

@@ -109,18 +109,6 @@ private[timo] object TimoConf {
 
   val INDEX_ATTR_NUM=intConf("timo.index.attrnum",defaultValue = Some(1))
 
-  val WHICH_ATTR=intConf("timo.index.whichattr",defaultValue = Some(0))
-
-  val LEFT_ATTRIBUTE=stringConf("timo.join.leftattr",defaultValue = Some(""))
-
-  val RIGHT_ATTRIBUTE=stringConf("timo.join.rightattr",defaultValue = Some(""))
-
-  val HASH_MEMORY_TIME=intConf("timo.join.memorytime",defaultValue=Some(14))
-
-  val GET_RESULT_TIME=intConf("timo.join.resulttime",defaultValue = Some(6))
-
-  val EIIHBAE=stringConf("timo.eiihbase.operator",defaultValue = Some("false"))
-
 }
 
 private[timo] class TimoConf extends Serializable {
@@ -139,14 +127,6 @@ private[timo] class TimoConf extends Serializable {
 
   private[timo] def aggeratorRange:String=getConf(RANGE_SEARCH)
   private[timo] def indexAttrNum:Int=getConf(INDEX_ATTR_NUM)
-  private[timo] def which_attr:mutable.HashMap[String,Int]=new mutable.HashMap[String,Int]()
-  private[timo] def left_attrbute:String=getConf(LEFT_ATTRIBUTE)
-  private[timo] def right_attrbute:String=getConf(RIGHT_ATTRIBUTE)
-
-  private[timo] def memory_time:Int=getConf(HASH_MEMORY_TIME)
-  private[timo] def result_time:Int=getConf(GET_RESULT_TIME)
-
-  private[timo] def eiihbase:String=getConf(EIIHBAE)
 
   def setConf(props: Properties): Unit = settings.synchronized {
     props.asScala.foreach { case (k, v) => setConfString(k, v)
@@ -158,21 +138,10 @@ private[timo] class TimoConf extends Serializable {
     require(value != null, s"value cannot be null for key: $key")
     val entry = TimoConfEntries.get(key)
     if (entry != null) {
-      // Only verify configs in the SimbaConf object
-      entry.valueConverter(value)//.valueConverter(value)
+      entry.valueConverter(value)
     }
     settings.put(key, value)
   }
-
-  /*def setConfBoolean(key:String,value:Boolean):Unit={
-    require(key!=null,"key cannot be null")
-    require(value!=null ,s"value cannot be null for key:$key")
-    val entry=TimoConfEntries.get(key)
-    if(entry!=null){
-      entry.valueConverter(value)
-    }
-    //settings.put(key,value)
-  }*/
 
   def setConf[T](entry: TimoConfEntry[T], value: T): Unit = {
     require(entry != null, "entry cannot be null")

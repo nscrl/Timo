@@ -156,7 +156,7 @@ private[timo] class IndexManager extends Logging with Serializable {
       val dataIndex = indexedData.indexWhere(cd => planToIndex.sameResult(cd.plan))
       if (dataIndex < 0) found = false
       else hasFound = true
-      indexedData(dataIndex).indexedData._indexedRDD.unpersist(blocking)
+      indexedData(dataIndex).indexedData.temporalRDD.temporalPartition.unpersist(blocking)
       indexedData.remove(dataIndex)
       indexInfos.remove(dataIndex)
     }
@@ -171,7 +171,7 @@ private[timo] class IndexManager extends Logging with Serializable {
       planToIndex.sameResult(cd.plan) && cd.name.equals(indexName)
     }
     require(dataIndex >= 0, s"Table $query or index $indexName is not indexed.")
-    indexedData(dataIndex).indexedData._indexedRDD.unpersist(blocking)
+    indexedData(dataIndex).indexedData.temporalRDD.temporalPartition.unpersist(blocking)
     indexedData.remove(dataIndex)
     indexInfos.remove(dataIndex)
   }
@@ -189,7 +189,7 @@ private[timo] class IndexManager extends Logging with Serializable {
       }
     }
     require(dataIndex >= 0, s"Table $query or Index on $column is not indexed.")
-    indexedData(dataIndex).indexedData._indexedRDD.unpersist(blocking)
+    indexedData(dataIndex).indexedData.temporalRDD.temporalPartition.unpersist(blocking)
     indexedData.remove(dataIndex)
     indexInfos.remove(dataIndex)
   }
@@ -204,7 +204,7 @@ private[timo] class IndexManager extends Logging with Serializable {
       found = dataIndex >= 0
       if (found) {
         hasFound = true
-        indexedData(dataIndex).indexedData._indexedRDD.unpersist(blocking)
+        indexedData(dataIndex).indexedData.temporalRDD.temporalPartition.unpersist(blocking)
         indexedData.remove(dataIndex)
         indexInfos.remove(dataIndex)
       }
@@ -219,7 +219,7 @@ private[timo] class IndexManager extends Logging with Serializable {
     val dataIndex = indexedData.indexWhere(cd => planToCache.sameResult(cd.plan))
     val found = dataIndex >= 0
     if (found) {
-      indexedData(dataIndex).indexedData._indexedRDD.unpersist(blocking)
+      indexedData(dataIndex).indexedData.temporalRDD.temporalPartition.unpersist(blocking)
       indexedData.remove(dataIndex)
       indexInfos.remove(dataIndex)
     }
@@ -227,7 +227,7 @@ private[timo] class IndexManager extends Logging with Serializable {
   }
 
   private[timo] def clearIndex(): Unit = writeLock {
-    indexedData.foreach(_.indexedData._indexedRDD.unpersist())
+    indexedData.foreach(_.indexedData.temporalRDD.temporalPartition.unpersist())
     indexedData.clear()
     indexInfos.clear()
   }
@@ -252,23 +252,22 @@ private[timo] class IndexManager extends Logging with Serializable {
 
     if (preData.indexType == STEIDType) {
 
-      val rtreeRelation = indexedItem.indexedData.asInstanceOf[STEIDIndexRelation]
-      sparkContext.parallelize(rtreeRelation.temporalRDD.bounds).saveAsObjectFile("hdfs://master:9000/index/"+fileName+"/bounds")
-      sparkContext.parallelize(Array(rtreeRelation)).saveAsObjectFile("hdfs://master:9000/index/"+fileName + "/steidRelation")
+      val steidRelation = indexedItem.indexedData.asInstanceOf[STEIDIndexRelation]
+      sparkContext.parallelize(steidRelation.temporalRDD.bounds).saveAsObjectFile("hdfs://master:9000/index/"+fileName+"/bounds")
+      sparkContext.parallelize(Array(steidRelation)).saveAsObjectFile("hdfs://master:9000/index/"+fileName + "/steidRelation")
     } else{
       val hashRelation = indexedItem.indexedData.asInstanceOf[HashIndexRelation]
       sparkContext.parallelize(hashRelation.temporalRDD.bounds).saveAsObjectFile("hdfs://master:9000/index/"+fileName+"/bounds")
       sparkContext.parallelize(Array(hashRelation)).saveAsObjectFile("hdfs://master:9000/index/"+fileName + "/steidRelation")
-      hashRelation._indexedRDD.saveAsObjectFile("hdfs://master:9000/index/"+fileName + "/rdd")
+      hashRelation.temporalRDD.temporalPartition.saveAsObjectFile("hdfs://master:9000/index/"+fileName + "/rdd")
     }
 
     indexInfos(dataIndex) = IndexInfo(preData.tableName, preData.indexName,
       preData.attributes, preData.indexType, fileName, preData.storageLevel)
   }
 
-
-  private[timo] def loadIndex(simbaSession: TimoSession, indexName: String, fileName: String): Unit = {
-    var sparkContext = simbaSession.sparkContext
+  private[timo] def loadIndex(timoSession: TimoSession, indexName: String, fileName: String): Unit = {
+    var sparkContext = timoSession.sparkContext
 
     val info = sparkContext.objectFile[IndexInfo]("hdfs://master:9000/index/" + fileName + "/indexInfo").collect().head
     val plan = sparkContext.objectFile[LogicalPlan]("hdfs://master:9000/index/" + fileName + "/plan").collect().head

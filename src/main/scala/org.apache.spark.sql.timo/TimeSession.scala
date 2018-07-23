@@ -85,7 +85,6 @@ class TimoSession private[timo](@transient override val sparkContext: SparkConte
 
 object TimoSession {
 
-
   class Builder extends Logging {
 
     private[this] val options = new scala.collection.mutable.HashMap[String, String]
@@ -96,8 +95,6 @@ object TimoSession {
       userSuppliedContext = Option(sparkContext)
       this
     }
-
-
 
     def appName(name: String): Builder = config("spark.app.name", name)
 
@@ -216,7 +213,7 @@ object TimoSession {
     defaultSession.set(null)
   }
 
-  private[sql] def createDataFrame(rdd: RDD[_], beanClass: Class[_],sASSession: TimoSession): Dataset[Row] = {
+  private[sql] def createDataFrame(rdd: RDD[_], beanClass: Class[_],timoSession: TimoSession): Dataset[Row] = {
     val attributeSeq: Seq[AttributeReference] = getSchema(beanClass)
     val className = beanClass.getName
     val rowRdd = rdd.mapPartitions { iter =>
@@ -224,7 +221,7 @@ object TimoSession {
       val localBeanInfo = Introspector.getBeanInfo(Utils.classForName(className))
       SQLContext.beansToRows(iter, localBeanInfo, attributeSeq)
     }
-    Dataset.ofRows(sASSession, LogicalRDD(attributeSeq, rowRdd)(sASSession))
+    Dataset.ofRows(timoSession, LogicalRDD(attributeSeq, rowRdd)(timoSession))
   }
 
   private[sql] def getSchema(beanClass: Class[_]): Seq[AttributeReference] = {
@@ -234,8 +231,8 @@ object TimoSession {
     }
   }
 
-  private[sql] def createDataFrame1(rdd: JavaRDD[_], beanClass: Class[_],sASSession: TimoSession):Dataset[Row] = {
-    createDataFrame(rdd.rdd, beanClass,sASSession)
+  private[sql] def createDataFrame1(rdd: JavaRDD[_], beanClass: Class[_],timoSession: TimoSession):Dataset[Row] = {
+    createDataFrame(rdd.rdd, beanClass,timoSession)
   }
 
 

@@ -38,10 +38,6 @@ class Dataset[T] private[timo](@transient val TimoSession: TimoSession,
   ////////////////////////////////////////
   //Search operations
   ////////////////////////////////////////
-  /*
-  def Temporal_Find():DataFrame=withPlan(
-
-  )*/
   def Range_Find(records:String,start_point:Long,end_point:Long):DataFrame=withPlan {
 
     val attrs = getAttributes(Array(records))
@@ -51,29 +47,14 @@ class Dataset[T] private[timo](@transient val TimoSession: TimoSession,
           ,logicalPlan)
   }
 
-  //EIIHBase
   def Interval_Find(records:Array[String],start_point:Long,end_point:Long):DataFrame =withPlan{
     val attrs=getAttributes(records)
-    println("debug")
-    attrs.foreach(attr=>
-      assert(attr!=null , "column not found"))
-    //TimoSession.sessionState.setConf("Timo.eiihbase.operator","true")
+    attrs.foreach(attr=>assert(attr!=null , "column not found"))
     Filter(IntervalFind(TimeWrapper(attrs)
           ,LiteralUtil(start_point),LiteralUtil(end_point),LiteralUtil(0))
           ,logicalPlan)
   }
 
-  //segment tree
-  def Interval_Search(records:Array[String],timepoint:Long,timepoint1:Long): DataFrame =withPlan{
-    val attrs = getAttributes(records)
-    attrs.foreach(attr => assert(attr != null, "column not found"))
-    println(logicalPlan)
-    Filter(InTime(TimeWrapper(attrs)
-          ,LiteralUtil(timepoint),LiteralUtil(timepoint1))
-          ,logicalPlan)
-  }
-
-  //hashMap
   def Temporal_Find(records:Array[String],timepoint:Long): DataFrame =withPlan{
     val attrs=getAttributes(records)
     attrs.foreach(attr=>assert(attr!=null,"column not found"))
@@ -85,7 +66,6 @@ class Dataset[T] private[timo](@transient val TimoSession: TimoSession,
   ////////////////////////////////////////
   //Aggregation operations
   ////////////////////////////////////////
-
   def Max(cols:String,timepoint:Long,timepoint1:Long):DataFrame=withPlan{
     val attr=getAttributes(Array(cols))
     TimoSession.sessionState.setConf("timo.aggerator.order",attrs.indexWhere(_.name == cols).toString)
@@ -132,13 +112,6 @@ class Dataset[T] private[timo](@transient val TimoSession: TimoSession,
     Filter(InTopK(TimeWrapper(attrs)
       ,LiteralUtil(timepoint),LiteralUtil(timepoint1),LiteralUtil(k),LiteralUtil(1))
       ,logicalPlan)
-  }
-
-  def FilterFunc(iter:Int,compare:Array[Int]): Boolean ={
-    for(i<-0 to compare.length-1)
-      if(iter==compare(i))
-        return true
-    false
   }
 
   /////////////////////////////////////////////////////////////////////////////

@@ -68,11 +68,11 @@ class STEIDIndex[T] extends Index with Serializable{
     val result=new ArrayBuffer[Int]()
 
     if(start==end){
-      result ++=ST.get(start)
+      result ++=ST.get(start.toInt)
     }else {
-      for (i:Long <- start until end) {
-        if(ST.containsKey(i)) {
-          result ++= ST.get(i)
+      for (i<- start until end) {
+        if(ST.containsKey(i.toInt)) {
+          result ++= ST.get(i.toInt)
         }
       }
     }
@@ -81,22 +81,22 @@ class STEIDIndex[T] extends Index with Serializable{
 
   def get_ID_Result(start:Long,end:Long): ArrayBuffer[Int] ={
 
-    var bound=bounds.indexWhere(iter=>iter>start)-1
-    var id_Result=ID.get(bound*num)
-    var st_Result=ST.get(bound*num)
-    var ed=get_ED_Result(bound*num,start)
+    var bound=bounds.indexWhere(iter=>iter>start.toInt)-1
+    var id_Result=ID.get((bound*num).toInt)
+    var st_Result=ST.get((bound*num).toInt)
+    var ed=get_ED_Result((bound*num).toInt,start.toInt)
     var i=bound.toLong*num
     var result=new ArrayBuffer[Int]()
 
     if(i!=0){
-      if(ID.containsKey(i)) {
-        result ++= ID.get(i)
+      if(ID.containsKey(i.toInt)) {
+        result ++= ID.get(i.toInt)
       }
     }
 
     while(i<start){
-      if(ST.containsKey(i)) {
-        result ++= ST.get(i)
+      if(ST.containsKey(i.toInt)) {
+        result ++= ST.get(i.toInt)
       }
       i+=1
     }
@@ -109,9 +109,9 @@ class STEIDIndex[T] extends Index with Serializable{
     var start=0L
     var i=temporal
     while(i<end){
-      if(ED.containsKey(i))
+      if(ED.containsKey(i.toInt))
         if(i!=0) {
-          result ++= ED.get(i)
+          result ++= ED.get(i.toInt)
         }
       i+=1
     }
@@ -127,12 +127,12 @@ class STEIDIndex[T] extends Index with Serializable{
     if(start==end){
 
       all_sum+=etime-stime
-      result ++=ST.get(start)
+      result ++=ST.get(start.toInt)
     }else {
       for (i:Int <- start until end) {
-        if(ST.containsKey(i)) {
+        if(ST.containsKey(i.toInt)) {
 
-          result ++= ST.get(i)
+          result ++= ST.get(i.toInt)
         }
       }
     }

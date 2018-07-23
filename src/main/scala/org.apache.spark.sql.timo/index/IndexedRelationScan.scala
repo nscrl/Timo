@@ -5,13 +5,11 @@ import org.apache.spark.sql.timo.execution.{TimoPlan}
 import org.apache.spark.sql.timo.expression._
 import org.apache.spark.rdd.{PartitionPruningRDD, RDD}
 
-import util.control.Breaks._
 import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.execution.SparkPlan
-import org.apache.spark.sql.timo.temporal.MinHeap
-import org.apache.spark.sql.timo.util.{AccumulatorLong, MapAccumulator, MaxOrdering, MinOrdering}
+import org.apache.spark.sql.timo.util.{AccumulatorLong, MapAccumulator}
 
 import scala.collection.mutable
 
@@ -28,12 +26,9 @@ private[timo] case class IndexedRelationScan(attributes: Seq[Attribute],
   private val test=TimoSessionState.TimoConf.getConfString("timo.aggerator.range")
   private val order=TimoSessionState.TimoConf.getConfString("timo.aggerator.order").toInt
 
-  val accmulator=new MapAccumulator //Map(event_time_st->1)得到所有的结果
-  this.sparkContext.register(accmulator)
-
   override def children:Seq[SparkPlan] = Nil // for UnaryNode
-  // All Filter functions
 
+  // All Filter functions
   def getExpression(condition: Expression, column: List[Attribute])
   : List[Expression] = {
     var ans:List[Expression] = List()
@@ -105,7 +100,7 @@ private[timo] case class IndexedRelationScan(attributes: Seq[Attribute],
     }
 
     val after_filter = if (predicates.size == 1 && predicates.head.toString == "true"){
-      relation._indexedRDD.flatMap(_.data)
+      relation.temporalRDD.temporalPartition.flatMap(_.data)
     } else
     relation match {
       // Hash Relation
@@ -115,7 +110,7 @@ private[timo] case class IndexedRelationScan(attributes: Seq[Attribute],
             var flag_agge=0
 
             val exps = getExpression(predicates, hash.columnKeys)
-            val bounds=hash.range_bounds
+            val bounds=hash.temporalRDD.bounds
             val query_time:Array[Long]=new Array[Long](2)
             var ResultPartition=0
             var query_sets = new mutable.HashSet[Int]
@@ -211,7 +206,7 @@ private[timo] case class IndexedRelationScan(attributes: Seq[Attribute],
           }).reduce((a,b)=>a.union(b))
 
         }
-        else hash._indexedRDD.flatMap(_.data)
+        else hash.temporalRDD.temporalPartition.flatMap(_.data)
 
       case steid @ STEIDIndexRelation(_,_,_,_,_)=>
         {
@@ -332,7 +327,6 @@ private[timo] case class IndexedRelationScan(attributes: Seq[Attribute],
                 }
               })
 
-              println("debug")
               if(res.count()==1){
                 res
               }else if(flag_agge == 1){

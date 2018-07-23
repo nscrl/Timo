@@ -1,11 +1,10 @@
 package org.apache.spark.sql.timo.index
 
-import org.apache.spark.sql.timo.{TimoSession, TemporalRDD}
+import org.apache.spark.sql.timo.TimoSession
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkPlan
-import org.apache.spark.sql.timo.partitioner.{IntervalTreeIndexRelation}
 
 /**
   * Created by mint on 5/15/16.
@@ -22,9 +21,6 @@ private[timo] object IndexedRelation {
       case HashType=>
         HashIndexRelation(child.output,child,table_name,column_keys,index_name)()
 
-      case IntervalType =>
-        IntervalTreeIndexRelation(child.output, child,table_name,column_keys,index_name)()
-
       case STEIDType=>
         STEIDIndexRelation(child.output,child,table_name,column_keys,index_name)()
 
@@ -35,8 +31,8 @@ private[timo] object IndexedRelation {
 
 private[timo] abstract class IndexedRelation extends LogicalPlan {
   self: Product =>
-  var _indexedRDD: IndexedRDD
-  //var temporalRDD:TemporalRDD
+
+  var temporalRDD:TemporalRDD
   def timoSession = TimoSession.getActiveSession.orNull
 
   override def children: Seq[LogicalPlan] = Nil

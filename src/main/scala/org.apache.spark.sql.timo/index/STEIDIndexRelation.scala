@@ -6,8 +6,8 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.analysis.MultiInstanceRelation
 import org.apache.spark.sql.catalyst.expressions.{Attribute, BindReferences}
 import org.apache.spark.sql.execution.SparkPlan
-import org.apache.spark.sql.timo.TemporalRDD
-import org.apache.spark.sql.timo.partitioner.{TemporalPartitioner}
+import org.apache.spark.sql.timo.{TemporalRdd}
+import org.apache.spark.sql.timo.partitioner.TemporalPartitioner
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.unsafe.types.UTF8String
 
@@ -16,18 +16,15 @@ case class STEIDIndexRelation (
                                 child:SparkPlan,
                                 tableName:Option[String],
                                 columnKeys:List[Attribute],
-                                indexName:String)(var _indexedRDD:IndexedRDD=null,
-                                                  var down_bound:Long=0L)
+                                indexName:String)(var temporalRDD: TemporalRDD=null)
 extends IndexedRelation with MultiInstanceRelation{
 
-  require(columnKeys.length!=1)
 
-  var temporalRDD:TemporalRDD[Long]=buildIndex()
   if(temporalRDD==null){
     buildIndex()
   }
 
-  private def buildIndex() : TemporalRDD[Long]={
+  private def buildIndex()={
 
     val output=child.output
     var dataRDD=child.execute().map(row=>{
@@ -41,7 +38,6 @@ extends IndexedRelation with MultiInstanceRelation{
     val period=timoSession.sessionState.getConf("timo.partition.period").toLong
     val partition_num=timoSession.sessionState.getConf("timo.index.partitions").toInt
     val (partitionedRDD,tmp_bounds,min)=TemporalPartitioner(dataRDD,period,partition_num)
-    down_bound=min
 
     val indexed=partitionedRDD.mapPartitions(iter=>{
       val data=iter.toArray
@@ -51,14 +47,14 @@ extends IndexedRelation with MultiInstanceRelation{
     }).persist(StorageLevel.MEMORY_AND_DISK_SER_2)
 
     indexed.setName(tableName.map(n=>s"$n $indexName").getOrElse(child.toString()))
-    new TemporalRDD[Long](indexed,tmp_bounds)
+    temporalRDD=new TemporalRdd[Long](indexed,tmp_bounds)
   }
 
   override def  newInstance()={
-    new STEIDIndexRelation(output.map(_.newInstance()),child,tableName,columnKeys,indexName)(_indexedRDD,down_bound).asInstanceOf[this.type]
+    new STEIDIndexRelation(output.map(_.newInstance()),child,tableName,columnKeys,indexName)(temporalRDD).asInstanceOf[this.type]
   }
 
   override def withOutput(newOutput: Seq[Attribute]): IndexedRelation = {
-    STEIDIndexRelation(newOutput,child,tableName,columnKeys,indexName)(_indexedRDD,down_bound)
+    STEIDIndexRelation(newOutput,child,tableName,columnKeys,indexName)(temporalRDD)
   }
 }

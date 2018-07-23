@@ -3,6 +3,9 @@ package org.apache.spark.sql.timo.examples
 import org.apache.spark.sql.timo.TimoSession
 import org.apache.spark.sql.timo.examples.SearchOps.Record
 import org.apache.spark.sql.timo.index.HashType
+/**
+  * Created by Elroy on 5/7/2017.
+  */
 
 object AnalyseOps {
 
@@ -11,19 +14,19 @@ object AnalyseOps {
     .master("local[*]")
     .appName("AnalyseOps")
     .getOrCreate()
-  timoSession.sessionState.setConf("spark.sql.shuffle.partitions",100.toString)
+
   timoSession.sessionState.setConf("spark.serializer","org.apache.serializer.KryoSerializer")
   timoSession.sessionState.setConf("spark.kryo.registrationRequired", "true")
   timoSession.sessionState.setConf("timo.index.partitions",10.toString)
 
-  Get_Max(timoSession)
+  Get_Min(timoSession)
 
   timoSession.stop()
 
-  private def Get_Max(timosession: TimoSession)={
+  private def Get_Min(timosession: TimoSession)={
     import timosession.implicits._
     import timosession.TimoImplicits._
-    val data=timosession.sparkContext.textFile(".../TQAS/data_source.txt").map(_.toString.trim.split(",")).filter(_.length>=3).map(p=>{
+    val data=timosession.sparkContext.textFile(".../Timo/data_source.txt").map(_.toString.trim.split(",")).filter(_.length>=3).map(p=>{
       Record(p(0).toLong,p(1).toInt,p(2).toInt,p(3).toInt,p(4).toInt,p(5).toInt)
     }).toDS()
 

@@ -3,8 +3,6 @@ package org.apache.spark.sql.timo.examples
 import org.apache.spark.sql.timo.TimoSession
 import org.apache.spark.sql.timo.index.{HashType, STEIDType}
 
-import scala.util.Random
-
 /**
   * Created by Elroy on 5/7/2017.
   */
@@ -12,14 +10,12 @@ object SearchOps extends App{
 
   case class Record(time:Long,attr1:Int,attr2:Int,attr3:Int,attr4:Int,attr5:Int)
   case class Name(name:String,event_time_st:Long,event_time_ed:Long,free:Int,location:Int)
-  case class Name1(name:String,event_time_st:Long,event_time_ed:Long)
   val timoSession = TimoSession
     .builder()
     .master("local[*]")
     .appName("SearchOps")
     .getOrCreate()
 
-  timoSession.sessionState.setConf("spark.sql.shuffle.partitions",100.toString)
   timoSession.sessionState.setConf("spark.driver.maxResultSize","10g")
   timoSession.sessionState.setConf("timo.index.partitions",10.toString)
 
@@ -36,6 +32,19 @@ object SearchOps extends App{
 
     data.index(HashType,"hash",Array("time"),"Month")
     data.Range_Find("time",20180104041617L,20180104072614L).show()
+  }
+
+  private def Interval_Find(session: TimoSession): Unit ={
+    import session.implicits._
+    import session.TimoImplicits._
+    //Users/houkailiu/Downloads/TQAS/data3.txt
+    val data=session.sparkContext.textFile(".../data.txt").map(_.toString.trim.split(",")).filter(_.length>=3).map(p=>{
+      Name(p(0),p(1).toLong,p(2).toLong,p(3).toInt,p(4).toInt)
+    }).toDS()
+
+    data.index(STEIDType,"STEID",Array("event_time_st","event_time_ed"),"Month")
+
+    data.Interval_Find(Array("event_time_st"),20130301000540L,20130301200540L).show()
   }
 
 }

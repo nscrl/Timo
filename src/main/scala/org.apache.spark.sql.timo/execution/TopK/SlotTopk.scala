@@ -4,15 +4,16 @@ import org.apache.spark.rdd.{PartitionPruningRDD, RDD}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{Expression, Literal}
 import org.apache.spark.sql.execution.SparkPlan
-import org.apache.spark.sql.timo.TemporalRDD
 import org.apache.spark.sql.timo.execution.TimoPlan
-import org.apache.spark.sql.timo.index.{IndexedPartition, STEIDIndex}
+import org.apache.spark.sql.timo.index.{IndexedPartition, STEIDIndex, TemporalRDD}
 import org.apache.spark.sql.timo.temporal.MinHeap
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.util.control.Breaks.{break, breakable}
-
+/**
+  * Created by Elroy on 6/8/2017.
+  */
 
 case class SlotTopk(child:SparkPlan, columnKey:Seq[Expression], starttime:Literal,
                     endtime:Literal, k:Literal,flag:Literal) extends TimoPlan {
@@ -21,34 +22,33 @@ case class SlotTopk(child:SparkPlan, columnKey:Seq[Expression], starttime:Litera
 
   override def children: Seq[SparkPlan] = Seq(child)
 
-  def getPartition(first:Long,second:Long,bounds:Array[(Long,Long)]): mutable.HashSet[Int] ={
+  def get_Partition(first:Long,second:Long,bounds:Array[(Long)]):mutable.HashSet[Int]={
+    val query_sets = new mutable.HashSet[Int]
 
-    val partition_sets = new mutable.HashSet[Int]
+    var start=bounds.indexWhere(ele=>ele>=first)
+    var end =bounds.indexWhere(ele=>ele>=second)
 
-    var start=bounds.indexWhere(ele=>(ele._1<=first&&ele._2>=first))
-    var end =bounds.indexWhere(ele=>(ele._2>=second&&ele._1<=second))
     if(end == -1)
       end=bounds.length
     if(start>=0){
       while(start<=end)
       {
-        partition_sets.add(start)
+        query_sets.add(start)
         start+=1
       }
     }
-
-    partition_sets
+    query_sets
   }
 
   override protected def doExecute(): RDD[InternalRow] = {
 
-    val data=child.execute().asInstanceOf[TemporalRDD[(Long,Long)]]
+    val data=child.execute().asInstanceOf[TemporalRDD]
 
     var query_time:Array[Long]=new Array[Long](2)
     query_time(0)=starttime.value.asInstanceOf[Long]
     query_time(1)=endtime.value.asInstanceOf[Long]
     var query_sets:mutable.HashSet[Int] = new mutable.HashSet[Int]
-    query_sets=getPartition(query_time(0),query_time(1),data.bounds)
+    query_sets=get_Partition(query_time(0),query_time(1),data.bounds)
 
     val prund=new PartitionPruningRDD[IndexedPartition](data.temporalPartition,query_sets.contains)
 

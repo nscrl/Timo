@@ -1,0 +1,63 @@
+package org.apache.spark.sql.timo.index
+
+import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.timo.temporal.IntervalTree
+
+import scala.collection.mutable.ArrayBuffer
+import scala.util.control.Breaks._
+
+/**
+  * Created by nicho on 5/15/2017.
+  */
+
+class IntervalTreeIndex[T] extends Index {
+  var index = new IntervalTree[Long]()
+  var size = 0
+
+  var bounds: ArrayBuffer[Int] = ArrayBuffer.empty[Int]
+  var result:Array[Int]=_
+  var Sorted:List[Int]=_
+  var original:Array[Long]=_
+}
+
+object IntervalTreeIndex extends Serializable {
+
+  def apply[T](data: Array[(T, InternalRow)]): IntervalTreeIndex[T] = {
+    val ans = new IntervalTreeIndex[T]
+    var minTime = data(0)._1.toString.toLong
+
+    val maxTime = data(data.length-1)._1.toString.toLong
+    val size = math.sqrt(maxTime + 1L - minTime).toInt           //获得叶子节点数
+    //  val len = size  * slen                                                //
+    val len=(data.length/size).toLong
+    var ref = 0
+
+    var minValue=0L
+    var maxValue=0L
+    for (i <- 1 until size){
+
+      minTime = minTime + len
+      ans.bounds += ref
+      minValue=data(ref)._1.toString.toLong
+      breakable {
+        while (ref < data.length) {
+          if (data(ref)._1.toString.toLong > minTime - 1) {
+            break
+          }
+
+          ref += 1
+        }
+      }
+      maxValue=data(ref - 1)._1.toString.toLong
+      ans.index.insert(Array(minValue,maxValue),Array(minTime-len,minTime-1),i.toLong)
+    }
+    if (minTime < maxTime){
+      ans.bounds += ref
+      ans.size = size
+      minValue=data(ref)._1.toString.toLong
+      maxValue=data(data.length-1)._1.toString.toLong
+      ans.index.insert(Array(minValue,maxValue),Array(minTime,minTime+len-1),size.toLong)
+    }
+    ans
+  }
+}

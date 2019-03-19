@@ -1,2 +1,37 @@
+### Eclipse
+*.pydevproject
+.metadata
+.gradle
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+*.versionsBackup
+local.properties
+release.properties
+.loadpath
+
+#IDEA
+*.iml
+.settings
+
+### Java
 *.class
+
+# Package Files #
+*.jar
+*.war
+*.ear
+
+### Origin
+# /
+.classpath
+.project
+.idea
+.DS_Store
+target
+logs
+*.releaseBackup
 *.log
+*.DS_Store

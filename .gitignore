@@ -35,3 +35,6 @@ logs
 *.releaseBackup
 *.log
 *.DS_Store
+
+### Spark
+spark-warehouse

@@ -17,7 +17,7 @@ object AnalyseOps extends App {
 
   timoSession.sessionState.setConf("spark.serializer","org.apache.serializer.KryoSerializer")
   timoSession.sessionState.setConf("spark.kryo.registrationRequired", "true")
-  timoSession.sessionState.setConf("timo.index.partitions",10.toString)
+  timoSession.sessionState.setConf("timo.index.partitions","10")
 
   Get_Min(timoSession)
 
@@ -26,11 +26,11 @@ object AnalyseOps extends App {
   private def Get_Min(timosession: TimoSession)={
     import timosession.implicits._
     import timosession.TimoImplicits._
-    val data=timosession.sparkContext.textFile(".../Timo/data_source.txt").map(_.toString.trim.split(",")).filter(_.length>=3).map(p=>{
+    val data=timosession.sparkContext.textFile("file:///Users/zhutiansi/Downloads/yyy.txt").map(_.toString.trim.split(" ,")).filter(_.length>=3).map(p=>{
       Record(p(0).toLong,p(1).toInt,p(2).toInt,p(3).toInt,p(4).toInt,p(5).toInt)
     }).toDS()
 
     data.index(HashType,"hash",Array("time"),"Month")
-    data.Min("attr3",20180104041617L,20180104072614L)
+    data.Min("attr3",20180000041617L,20180000072614L)
   }
 }

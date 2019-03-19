@@ -1,7 +1,7 @@
 package org.apache.spark.sql.timo.examples
 
 import org.apache.spark.sql.timo.TimoSession
-import org.apache.spark.sql.timo.index.{HashType, STEIDType}
+import org.apache.spark.sql.timo.index.HashType
 
 /**
   * Created by Elroy on 5/7/2017.
@@ -24,8 +24,8 @@ object SearchOps extends App{
 
   private def Time_Range(session: TimoSession): Unit ={
 
-    import session.implicits._
     import session.TimoImplicits._
+    import session.implicits._
     val data=session.sparkContext.textFile(".../Timo/data_source.txt").map(_.toString.trim.split(",")).filter(_.length>=3).map(p=>{
       Record(p(0).toLong,p(1).toInt,p(2).toInt,p(3).toInt,p(4).toInt,p(5).toInt)
     }).toDS()

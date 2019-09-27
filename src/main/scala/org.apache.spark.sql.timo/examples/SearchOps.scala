@@ -37,7 +37,7 @@ object SearchOps extends App{
   private def Interval_Find(session: TimoSession): Unit ={
     import session.implicits._
     import session.TimoImplicits._
-    //Users/houkailiu/Downloads/TQAS/data3.txt
+    
     val data=session.sparkContext.textFile(".../data.txt").map(_.toString.trim.split(",")).filter(_.length>=3).map(p=>{
       Name(p(0),p(1).toLong,p(2).toLong,p(3).toInt,p(4).toInt)
     }).toDS()

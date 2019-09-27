@@ -8,7 +8,6 @@ import org.apache.spark.sql.execution.SparkPlan
 
 /**
   * Created by mint on 5/15/16.
-  * Indexed Relation Structures for T-QAS
   */
 
 private[timo] case class IndexedPartition(data: Array[InternalRow], index: Index)

@@ -9,7 +9,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.util.control.Breaks._
 
 /**
-  * Created by nicho on 5/15/2017.
+  * Created by Elroy on 5/15/2017.
   */
 
 class IntervalTreeIndex[T] extends Index {
